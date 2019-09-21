@@ -45,10 +45,6 @@ BOOL CMFCUndoRedoSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// 大きいアイコンの設定
 	SetIcon(m_hIcon, FALSE);		// 小さいアイコンの設定
 
-	ShowWindow(SW_MAXIMIZE);
-
-	ShowWindow(SW_MINIMIZE);
-
 	// TODO: 初期化をここに追加します。
 
 	return TRUE;  // フォーカスをコントロールに設定した場合を除き、TRUE を返します。
