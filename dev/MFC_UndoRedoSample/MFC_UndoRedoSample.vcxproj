@@ -187,7 +187,10 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CAddCommand.h" />
+    <ClInclude Include="CSection.h" />
     <ClInclude Include="framework.h" />
+    <ClInclude Include="IMyCommand.h" />
     <ClInclude Include="MFC_UndoRedoSample.h" />
     <ClInclude Include="MFC_UndoRedoSampleDlg.h" />
     <ClInclude Include="pch.h" />
@@ -195,6 +198,9 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CAddCommand.cpp" />
+    <ClCompile Include="CSection.cpp" />
+    <ClCompile Include="IMyCommand.cpp" />
     <ClCompile Include="MFC_UndoRedoSample.cpp" />
     <ClCompile Include="MFC_UndoRedoSampleDlg.cpp" />
     <ClCompile Include="pch.cpp">
