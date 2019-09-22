@@ -7,11 +7,16 @@
 #include "MFC_UndoRedoSample.h"
 #include "MFC_UndoRedoSampleDlg.h"
 #include "afxdialogex.h"
+#include "IMyCommand.h"
+#include "CAddCommand.h"
+#include "CDelCommand.h"
+#include "CUpdateCommand.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
-
+#define IDM_UPDATE_LIST	(WM_APP + 1)
+#define IDC_UPDATE_LIST	(WM_APP + 2)
 
 // CMFCUndoRedoSampleDlg ダイアログ
 
@@ -31,13 +36,20 @@ void CMFCUndoRedoSampleDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CMFCUndoRedoSampleDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
+	ON_BN_CLICKED(IDC_BUTTON_ADD, &CMFCUndoRedoSampleDlg::OnBnClickedButtonAdd)
+	ON_MESSAGE(IDM_UPDATE_LIST, &CMFCUndoRedoSampleDlg::OnChangeSectionData)
+	ON_BN_CLICKED(IDC_BUTTON_DELETE, &CMFCUndoRedoSampleDlg::OnBnClickedButtonDelete)
+	ON_BN_CLICKED(IDC_BUTTON_UPDATE, &CMFCUndoRedoSampleDlg::OnBnClickedButtonUpdate)
+	ON_LBN_SELCHANGE(IDC_LIST_SECTION_LIST, &CMFCUndoRedoSampleDlg::OnLbnSelchangeListSectionList)
 END_MESSAGE_MAP()
+
 
 
 // CMFCUndoRedoSampleDlg メッセージ ハンドラー
 
 BOOL CMFCUndoRedoSampleDlg::OnInitDialog()
 {
+	DWORD data;
 	CDialogEx::OnInitDialog();
 
 	// このダイアログのアイコンを設定します。アプリケーションのメイン ウィンドウがダイアログでない場合、
@@ -46,6 +58,7 @@ BOOL CMFCUndoRedoSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 小さいアイコンの設定
 
 	// TODO: 初期化をここに追加します。
+
 
 	return TRUE;  // フォーカスをコントロールに設定した場合を除き、TRUE を返します。
 }
@@ -86,3 +99,133 @@ HCURSOR CMFCUndoRedoSampleDlg::OnQueryDragIcon()
 	return static_cast<HCURSOR>(m_hIcon);
 }
 
+/**
+ *	[追加]ボタンのイベントハンドラ
+ */
+void CMFCUndoRedoSampleDlg::OnBnClickedButtonAdd()
+{
+	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
+	INT_PTR CurIndex = ListBox->GetCurSel();
+	if (CurIndex < 0) {
+		CurIndex = 0;
+	}
+	CSection* NewSection = new CSection();
+	this->CollectInputData(NewSection);
+	CAddCommand Command;
+	this->UpdateViews(CurIndex, &Command, NewSection);
+}
+
+/**
+ *	[削除]ボタンのイベントハンドラ
+ */
+void CMFCUndoRedoSampleDlg::OnBnClickedButtonDelete()
+{
+	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
+	INT_PTR CurIndex = ListBox->GetCurSel();
+	if (CurIndex < 0) {
+		CurIndex = 0;
+	}
+	CDelCommand Command;
+	this->UpdateViews(CurIndex, &Command);
+
+	//選択されたアイテムの更新確認
+	if (CurIndex < this->m_SectionArray.GetCount()) {
+		ListBox->SetCurSel(CurIndex);
+	}
+	else {
+		INT_PTR IndexToSet = this->m_SectionArray.GetCount() - 1;
+		ListBox->SetCurSel(IndexToSet);
+	}
+
+	this->OnLbnSelchangeListSectionList();
+}
+
+/**
+ *	部署一覧のリストの表を更新する
+ */
+LRESULT CMFCUndoRedoSampleDlg::OnChangeSectionData(WPARAM wParam, LPARAM lParam)
+{
+	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
+	int ItemCount = ListBox->GetCount();
+	while (0 < ListBox->GetCount()) {
+		ListBox->DeleteString(0);
+	}
+
+	CArray<CSection*>* SectionArray = (CArray<CSection*>*)wParam;
+	for (INT_PTR Index = 0; Index < SectionArray->GetCount(); Index++) {
+		CSection* SectionItem = SectionArray->GetAt(Index);
+		ListBox->AddString(SectionItem->GetSectionName());
+	}
+
+	return 0;
+}
+
+/**
+ *	[更新]ボタンのイベントハンドラ
+ */
+void CMFCUndoRedoSampleDlg::OnBnClickedButtonUpdate()
+{
+	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
+	INT_PTR CurIndex = ListBox->GetCurSel();
+	if (CurIndex < 0) {
+		CurIndex = 0;
+	}
+	
+	CSection* UpdateSection = new CSection();
+	this->CollectInputData(UpdateSection);
+	CUpdateCommand Command;
+	this->UpdateViews(CurIndex, &Command, UpdateSection);
+}
+
+void CMFCUndoRedoSampleDlg::UpdateViews(DWORD ExecIndex, IMyCommand* Command, CSection* Section)
+{
+	Command->Execute(ExecIndex, &(this->m_SectionArray), Section);
+	SendMessage(IDM_UPDATE_LIST, (WPARAM)(&this->m_SectionArray));
+}
+
+void CMFCUndoRedoSampleDlg::CollectInputData(CSection* DstSection)
+{
+	ASSERT(nullptr != DstSection);
+
+	CEdit* SectionNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_NAME);
+	CEdit* ManagerNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_MANAGER_NAME);
+	CEdit* DescriptionEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
+
+	CString SectionName;
+	SectionNameEdit->GetWindowTextA(SectionName);
+	CString ManagerName;
+	ManagerNameEdit->GetWindowTextA(ManagerName);
+	CString Description;
+	DescriptionEdit->GetWindowTextA(Description);
+
+	if (SectionName != CString(_T(""))) {
+		DstSection->SetSectionName(SectionName);
+	}
+	DstSection->SetManager(ManagerName);
+	DstSection->SetDescription(Description);
+}
+
+void CMFCUndoRedoSampleDlg::OnLbnSelchangeListSectionList()
+{
+	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
+	CEdit* SectionNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_NAME);
+	CEdit* ManagerNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_MANAGER_NAME);
+	CEdit* DescriptionEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
+
+	INT_PTR CurIndex = ListBox->GetCurSel();
+	if ((0 == this->m_SectionArray.GetCount()) || (CurIndex < 0)) {
+		//リストの内容が空 → 表示内容をクリアする。
+		SectionNameEdit->SetWindowTextA(CString(_T("")));
+		ManagerNameEdit->SetWindowTextA(CString(_T("")));
+		DescriptionEdit->SetWindowTextA(CString(_T("")));
+
+		return;
+	}
+	else {
+		CSection* SelSection = this->m_SectionArray.GetAt(CurIndex);
+
+		SectionNameEdit->SetWindowTextA(SelSection->GetSectionName());
+		ManagerNameEdit->SetWindowTextA(SelSection->GetManager());
+		DescriptionEdit->SetWindowTextA(SelSection->GetDescription());
+	}
+}

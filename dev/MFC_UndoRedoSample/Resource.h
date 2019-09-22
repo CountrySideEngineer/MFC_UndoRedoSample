@@ -10,10 +10,12 @@
 #define IDC_STATIC_SECTION_NAME3        1004
 #define IDC_EDIT_SECTION_NAME           1005
 #define IDC_EDIT_SECTION_MASTER_NAME    1006
+#define IDC_EDIT_SECTION_MANAGER_NAME   1006
 #define IDC_EDIT_SECTION_WORK           1007
 #define IDC_BUTTON_ADD                  1008
 #define IDC_BUTTON_DELETE               1009
 #define IDC_EDIT3                       1010
+#define IDC_BUTTON_UPDATE               1010
 
 // Next default values for new objects
 // 
