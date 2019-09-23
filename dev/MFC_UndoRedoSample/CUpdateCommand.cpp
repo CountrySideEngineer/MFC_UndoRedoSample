@@ -1,6 +1,9 @@
 #include "pch.h"
 #include "CUpdateCommand.h"
 
+/**
+ *	編集コマンドを実行する。
+ */
 VOID CUpdateCommand::Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section)
 {
 	ASSERT(nullptr != SectionArray);
@@ -25,9 +28,4 @@ VOID CUpdateCommand::Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSe
 			SectionArray->SetAt(Index, Section);
 		}
 	}
-}
-
-VOID CUpdateCommand::UnExecute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section)
-{
-
 }

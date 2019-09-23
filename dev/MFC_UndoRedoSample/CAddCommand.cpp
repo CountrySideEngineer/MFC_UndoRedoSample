@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "CSection.h"
 #include "CAddCommand.h"
+#include "CSectionOriginator.h"
 
 /**
  *	新規の部署情報を追加する。
@@ -12,18 +13,6 @@ VOID CAddCommand::Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSecti
 {
 	ASSERT(nullptr != SectionArray);
 
+	//実行前の状況を確保
 	SectionArray->InsertAt(Index, Section);
-}
-
-/**
- *	新規の部署の追加をやり直す
- *
- *	@param	Index	新規の部署情報のやり直しを行う場所
- *	@param[in]	SectionArray	新規の部署の追加のやり直し先
- */
-VOID CAddCommand::UnExecute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section)
-{
-	ASSERT(nullptr != SectionArray);
-
-	SectionArray->RemoveAt(Index);
 }

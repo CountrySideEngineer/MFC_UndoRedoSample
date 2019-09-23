@@ -11,6 +11,9 @@
 #include "CAddCommand.h"
 #include "CDelCommand.h"
 #include "CUpdateCommand.h"
+#include "CSampleCommand.h"
+#include "CCommandManager.h"
+#include "CSectionOriginator.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -26,6 +29,11 @@ CMFCUndoRedoSampleDlg::CMFCUndoRedoSampleDlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_MFC_UNDOREDOSAMPLE_DIALOG, pParent)
 {
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+
+	this->m_CommandManager = new CMyCommandManager(10);
+
+	CSectionOriginator* Instance = CSectionOriginator::GetInstance();
+	Instance->InitInstance(&this->m_SectionArray);
 }
 
 void CMFCUndoRedoSampleDlg::DoDataExchange(CDataExchange* pDX)
@@ -41,6 +49,8 @@ BEGIN_MESSAGE_MAP(CMFCUndoRedoSampleDlg, CDialogEx)
 	ON_BN_CLICKED(IDC_BUTTON_DELETE, &CMFCUndoRedoSampleDlg::OnBnClickedButtonDelete)
 	ON_BN_CLICKED(IDC_BUTTON_UPDATE, &CMFCUndoRedoSampleDlg::OnBnClickedButtonUpdate)
 	ON_LBN_SELCHANGE(IDC_LIST_SECTION_LIST, &CMFCUndoRedoSampleDlg::OnLbnSelchangeListSectionList)
+	ON_BN_CLICKED(IDC_BUTTON_UNDO, &CMFCUndoRedoSampleDlg::OnBnClickedButtonUndo)
+	ON_BN_CLICKED(IDC_BUTTON_REDO, &CMFCUndoRedoSampleDlg::OnBnClickedButtonRedo)
 END_MESSAGE_MAP()
 
 
@@ -109,10 +119,12 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonAdd()
 	if (CurIndex < 0) {
 		CurIndex = 0;
 	}
+	
 	CSection* NewSection = new CSection();
 	this->CollectInputData(NewSection);
-	CAddCommand Command;
-	this->UpdateViews(CurIndex, &Command, NewSection);
+	IMyCommand* Command = new CAddCommand();
+	Command->PrepCommand(CurIndex, &this->m_SectionArray, NewSection);
+	this->CommandExecute(Command);
 }
 
 /**
@@ -125,8 +137,9 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonDelete()
 	if (CurIndex < 0) {
 		CurIndex = 0;
 	}
-	CDelCommand Command;
-	this->UpdateViews(CurIndex, &Command);
+
+	IMyCommand* Command = new CDelCommand();
+	Command->PrepCommand(CurIndex, &this->m_SectionArray);
 
 	//選択されたアイテムの更新確認
 	if (CurIndex < this->m_SectionArray.GetCount()) {
@@ -173,13 +186,21 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonUpdate()
 	
 	CSection* UpdateSection = new CSection();
 	this->CollectInputData(UpdateSection);
-	CUpdateCommand Command;
-	this->UpdateViews(CurIndex, &Command, UpdateSection);
+	IMyCommand* Command = new CUpdateCommand();
+	Command->PrepCommand(CurIndex, &this->m_SectionArray, UpdateSection);
+	CommandExecute(Command);
 }
 
-void CMFCUndoRedoSampleDlg::UpdateViews(DWORD ExecIndex, IMyCommand* Command, CSection* Section)
+/**
+ *	コマンド実行
+ */
+void CMFCUndoRedoSampleDlg::CommandExecute(IMyCommand* Command)
 {
-	Command->Execute(ExecIndex, &(this->m_SectionArray), Section);
+	ASSERT(nullptr != Command);
+
+	this->m_CommandManager->DoCommand(Command);
+
+	//コマンド実行後は、実行結果を表示に反映する。
 	SendMessage(IDM_UPDATE_LIST, (WPARAM)(&this->m_SectionArray));
 }
 
@@ -228,4 +249,16 @@ void CMFCUndoRedoSampleDlg::OnLbnSelchangeListSectionList()
 		ManagerNameEdit->SetWindowTextA(SelSection->GetManager());
 		DescriptionEdit->SetWindowTextA(SelSection->GetDescription());
 	}
+}
+
+void CMFCUndoRedoSampleDlg::OnBnClickedButtonUndo()
+{
+	this->m_CommandManager->UnDo();
+	SendMessage(IDM_UPDATE_LIST, (WPARAM)(&this->m_SectionArray));
+}
+
+void CMFCUndoRedoSampleDlg::OnBnClickedButtonRedo()
+{
+	this->m_CommandManager->ReDo();
+	SendMessage(IDM_UPDATE_LIST, (WPARAM)(&this->m_SectionArray));
 }
