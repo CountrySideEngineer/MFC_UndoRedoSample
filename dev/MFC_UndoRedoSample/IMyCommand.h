@@ -9,9 +9,8 @@ class IMyCommand
 public:
 	virtual VOID PrepCommand(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr);
 	virtual VOID Execute();
-	virtual VOID UnExecute();
-
-	virtual BOOL HasMement() { return this->m_HasMemento; }
+	virtual VOID UnDo();
+	virtual VOID ReDo();
 
 protected:
 	virtual VOID Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr) = 0;
@@ -23,7 +22,6 @@ protected:
 	CArray<CSection*>* m_CmdParamSectionArray;
 	CSection* m_CmdParamSection;
 
-	BOOL m_HasMemento;
 	CArray<CSection*> m_PreState;
 	CArray<CSection*> m_PostState;
 };

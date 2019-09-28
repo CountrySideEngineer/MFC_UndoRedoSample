@@ -7,7 +7,15 @@
 CMyCommandManager::CMyCommandManager(INT_PTR MaxStack)
 	: m_MaxStack(MaxStack)
 	, m_StackIndex(0)
-{}
+{
+	this->m_ReDoStack.RemoveAll();
+	this->m_UnDoStack.RemoveAll();
+}
+
+CMyCommandManager::~CMyCommandManager()
+{
+	this->RefreshStack();
+}
 
 /**
  *	コマンドを実行する。
@@ -23,10 +31,8 @@ BOOL CMyCommandManager::DoCommand(IMyCommand* Command)
 	}
 	else {
 		Command->Execute();
-
-		this->m_CommandStack.Add(Command);
-
-		m_StackIndex++;
+		this->m_UnDoStack.AddTail(Command);
+		this->ClearReDoStack();
 		return true;
 	}
 }
@@ -36,18 +42,13 @@ BOOL CMyCommandManager::DoCommand(IMyCommand* Command)
  */
 VOID CMyCommandManager::UnDo()
 {
-	if (0 == this->m_CommandStack.GetCount()) {
-		return;
+	if (0 < this->m_UnDoStack.GetCount()) {
+		IMyCommand* Command = this->m_UnDoStack.RemoveTail();
+		Command->UnDo();
+		this->m_ReDoStack.AddTail(Command);
 	}
 	else {
-		--(this->m_StackIndex);
-		if (this->m_StackIndex < 0) {
-			this->m_StackIndex = 0;
-		}
-		else {
-			IMyCommand* Command = this->m_CommandStack.GetAt(m_StackIndex);
-			Command->UnExecute();
-		}
+		//前の状態がない場合には、何もしない。
 	}
 }
 
@@ -56,14 +57,13 @@ VOID CMyCommandManager::UnDo()
  */
 VOID CMyCommandManager::ReDo()
 {
-	if (0 == this->m_CommandStack.GetCount()) {
-		return;
+	if (0 < this->m_ReDoStack.GetCount()) {
+		IMyCommand* Command = this->m_ReDoStack.GetTail();
+		Command->ReDo();
+		this->m_UnDoStack.AddTail(Command);
 	}
 	else {
-		IMyCommand* Command = this->m_CommandStack.GetAt(m_StackIndex);
-		Command->Execute();
-
-		m_StackIndex++;
+		//実行後の状態がない場合は、何もしない。
 	}
 }
 
@@ -72,12 +72,36 @@ VOID CMyCommandManager::ReDo()
  */
 VOID CMyCommandManager::RefreshStack()
 {
-	for (INT_PTR Index = 0; Index < m_CommandStack.GetCount(); Index++) {
-		IMyCommand* CommandItem = m_CommandStack.GetAt(Index);
-		delete CommandItem;
-		CommandItem = nullptr;
-	}
-	m_CommandStack.RemoveAll();
+	this->ClearUnDoStack();
+	this->ClearReDoStack();
+}
 
-	this->m_StackIndex = 0;
+/**
+ *	「元に戻す」用のスタックをクリアする。
+ */
+VOID CMyCommandManager::ClearUnDoStack()
+{
+	this->ClearStack(this->m_UnDoStack);
+}
+
+/**
+ *	「進める」用のスタックをクリアする。
+ */
+VOID CMyCommandManager::ClearReDoStack()
+{
+	this->ClearStack(this->m_ReDoStack);
+}
+
+/**
+ *	指定されたスタック(CList)をクリアする。
+ */
+VOID CMyCommandManager::ClearStack(CList<IMyCommand*>& m_UnDoStack)
+{
+	POSITION StackPosition = m_UnDoStack.GetHeadPosition();
+	for (INT_PTR nIndex = 0; nIndex < m_UnDoStack.GetCount(); nIndex++) {
+		IMyCommand* Command = m_UnDoStack.GetAt(StackPosition);
+		delete Command;
+		Command = NULL;
+	}
+	m_UnDoStack.RemoveAll();
 }
