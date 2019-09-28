@@ -59,7 +59,6 @@ END_MESSAGE_MAP()
 
 BOOL CMFCUndoRedoSampleDlg::OnInitDialog()
 {
-	DWORD data;
 	CDialogEx::OnInitDialog();
 
 	// このダイアログのアイコンを設定します。アプリケーションのメイン ウィンドウがダイアログでない場合、
@@ -140,6 +139,7 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonDelete()
 
 	IMyCommand* Command = new CDelCommand();
 	Command->PrepCommand(CurIndex, &this->m_SectionArray);
+	this->CommandExecute(Command);
 
 	//選択されたアイテムの更新確認
 	if (CurIndex < this->m_SectionArray.GetCount()) {
