@@ -188,7 +188,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CAddCommand.h" />
+    <ClInclude Include="CCommandManager.h" />
+    <ClInclude Include="CDelCommand.h" />
+    <ClInclude Include="CSampleCommand.h" />
     <ClInclude Include="CSection.h" />
+    <ClInclude Include="CSectionOriginator.h" />
+    <ClInclude Include="CUpdateCommand.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="IMyCommand.h" />
     <ClInclude Include="MFC_UndoRedoSample.h" />
@@ -199,7 +204,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CAddCommand.cpp" />
+    <ClCompile Include="CCommandManager.cpp" />
+    <ClCompile Include="CDelCommand.cpp" />
+    <ClCompile Include="CSampleCommand.cpp" />
     <ClCompile Include="CSection.cpp" />
+    <ClCompile Include="CSectionOriginator.cpp" />
+    <ClCompile Include="CUpdateCommand.cpp" />
     <ClCompile Include="IMyCommand.cpp" />
     <ClCompile Include="MFC_UndoRedoSample.cpp" />
     <ClCompile Include="MFC_UndoRedoSampleDlg.cpp" />

@@ -5,7 +5,7 @@
  *	デフォルトコンストラクタ
  */
 CSection::CSection()
-	: m_SectionName(CString(_T("")))
+	: m_SectionName(CString(_T("新しいセクション")))
 	, m_Manager(CString(_T("")))
 	, m_Description(CString(_T("")))
 {}
