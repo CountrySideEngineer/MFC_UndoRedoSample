@@ -190,6 +190,8 @@
     <ClInclude Include="CAddCommand.h" />
     <ClInclude Include="CCommandManager.h" />
     <ClInclude Include="CDelCommand.h" />
+    <ClInclude Include="CEditSectionCommand.h" />
+    <ClInclude Include="CMemento.h" />
     <ClInclude Include="CSampleCommand.h" />
     <ClInclude Include="CSection.h" />
     <ClInclude Include="CSectionOriginator.h" />
@@ -206,6 +208,8 @@
     <ClCompile Include="CAddCommand.cpp" />
     <ClCompile Include="CCommandManager.cpp" />
     <ClCompile Include="CDelCommand.cpp" />
+    <ClCompile Include="CEditSectionCommand.cpp" />
+    <ClCompile Include="CMemento.cpp" />
     <ClCompile Include="CSampleCommand.cpp" />
     <ClCompile Include="CSection.cpp" />
     <ClCompile Include="CSectionOriginator.cpp" />

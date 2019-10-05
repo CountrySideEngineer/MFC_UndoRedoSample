@@ -8,6 +8,14 @@
 class CSection
 {
 public:
+	enum SECTION_INFO_INDEX {
+		SECTION_INFO_INDEX_NAME = 0,
+		SECTION_INFO_INDEX_MANAGER,
+		SECTION_INFO_INDEX_DESCRIPTION,
+		SECTION_INFO_INDEX_MAX
+	};
+
+public:
 	CSection();
 	CSection(CString SectionName, CString Manager, CString Description);
 	CSection(const CSection* Section);

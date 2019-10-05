@@ -14,6 +14,7 @@ class CMFCUndoRedoSampleDlg : public CDialogEx
 // コンストラクション
 public:
 	CMFCUndoRedoSampleDlg(CWnd* pParent = nullptr);	// 標準コンストラクター
+	virtual ~CMFCUndoRedoSampleDlg();	// 標準コンストラクター
 
 // ダイアログ データ
 #ifdef AFX_DESIGN_TIME
@@ -32,6 +33,8 @@ protected:
 	CArray<CSection*>	m_SectionArray;
 	CMyCommandManager* m_CommandManager;
 
+	BOOL m_IsEdited;
+
 	// 生成された、メッセージ割り当て関数
 	virtual BOOL OnInitDialog();
 	afx_msg void OnPaint();
@@ -46,4 +49,6 @@ public:
 	afx_msg void OnLbnSelchangeListSectionList();
 	afx_msg void OnBnClickedButtonUndo();
 	afx_msg void OnBnClickedButtonRedo();
+	afx_msg void OnEnChangeEdit();
+	afx_msg void OnEnKillfocusEdit();
 };

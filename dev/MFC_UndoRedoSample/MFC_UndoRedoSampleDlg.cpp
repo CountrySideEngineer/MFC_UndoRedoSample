@@ -14,6 +14,7 @@
 #include "CSampleCommand.h"
 #include "CCommandManager.h"
 #include "CSectionOriginator.h"
+#include "CEditSectionCommand.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -32,8 +33,17 @@ CMFCUndoRedoSampleDlg::CMFCUndoRedoSampleDlg(CWnd* pParent /*=nullptr*/)
 
 	this->m_CommandManager = new CMyCommandManager(10);
 
-	CSectionOriginator* Instance = CSectionOriginator::GetInstance();
-	Instance->InitInstance(&this->m_SectionArray);
+	this->m_IsEdited = FALSE;
+}
+
+CMFCUndoRedoSampleDlg::~CMFCUndoRedoSampleDlg()
+{
+	for (INT_PTR Index = 0; Index < this->m_SectionArray.GetCount(); Index++) {
+		CSection* SectionItem = this->m_SectionArray.GetAt(Index);
+		delete SectionItem;
+		SectionItem = NULL;
+	}
+	delete this->m_CommandManager;
 }
 
 void CMFCUndoRedoSampleDlg::DoDataExchange(CDataExchange* pDX)
@@ -51,6 +61,12 @@ BEGIN_MESSAGE_MAP(CMFCUndoRedoSampleDlg, CDialogEx)
 	ON_LBN_SELCHANGE(IDC_LIST_SECTION_LIST, &CMFCUndoRedoSampleDlg::OnLbnSelchangeListSectionList)
 	ON_BN_CLICKED(IDC_BUTTON_UNDO, &CMFCUndoRedoSampleDlg::OnBnClickedButtonUndo)
 	ON_BN_CLICKED(IDC_BUTTON_REDO, &CMFCUndoRedoSampleDlg::OnBnClickedButtonRedo)
+	ON_EN_CHANGE(IDC_EDIT_SECTION_NAME, &CMFCUndoRedoSampleDlg::OnEnChangeEdit)
+	ON_EN_CHANGE(IDC_EDIT_SECTION_MANAGER_NAME, &CMFCUndoRedoSampleDlg::OnEnChangeEdit)
+	ON_EN_CHANGE(IDC_EDIT_SECTION_WORK, &CMFCUndoRedoSampleDlg::OnEnChangeEdit)
+	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_NAME, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit)
+	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_MANAGER_NAME, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit)
+	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_WORK, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit)
 END_MESSAGE_MAP()
 
 
@@ -67,7 +83,15 @@ BOOL CMFCUndoRedoSampleDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 小さいアイコンの設定
 
 	// TODO: 初期化をここに追加します。
-
+	CEdit* SectionNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_NAME);
+	CEdit* SectionManagerEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_MANAGER_NAME);
+	CEdit* SectionWorkEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
+	CSectionOriginator* Instance = CSectionOriginator::GetInstance();
+	Instance->InitInstance(
+		&this->m_SectionArray, 
+		SectionNameEdit, 
+		SectionManagerEdit, 
+		SectionWorkEdit);
 
 	return TRUE;  // フォーカスをコントロールに設定した場合を除き、TRUE を返します。
 }
@@ -261,4 +285,51 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonRedo()
 {
 	this->m_CommandManager->ReDo();
 	SendMessage(IDM_UPDATE_LIST, (WPARAM)(&this->m_SectionArray));
+}
+
+/**
+ *	セルの内容が編集されたことのイベントハンドラ
+ */
+void CMFCUndoRedoSampleDlg::OnEnChangeEdit()
+{
+	this->m_IsEdited = TRUE;
+}
+
+/**
+ *	CEditセルからフォーカスが外れたことのイベントハンドラ
+ */
+void CMFCUndoRedoSampleDlg::OnEnKillfocusEdit()
+{
+	//編集されていない場合には、何もしない。
+	if (FALSE == this->m_IsEdited) {
+		return;
+	}
+
+	CEdit* SectionNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_NAME);
+	CEdit* ManagerNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_MANAGER_NAME);
+	CEdit* DescriptionEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
+
+	CString SectioName = _T("");
+	CString ManagerName = _T("");
+	CString Description = _T("");
+
+	SectionNameEdit->GetWindowTextA(SectioName);
+	ManagerNameEdit->GetWindowTextA(ManagerName);
+	DescriptionEdit->GetWindowTextA(Description);
+	CSection EditedSection(SectioName, ManagerName, Description);
+
+	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
+	INT_PTR CurIndex = ListBox->GetCurSel();
+	if ((-1) == CurIndex) {
+		CurIndex = 0;
+	}
+	else if (this->m_SectionArray.GetCount() <= CurIndex) {
+		CurIndex = this->m_SectionArray.GetCount() - 1;
+	}
+	//選択されたセル：範囲内
+	CEditSectionCommand* Command = new CEditSectionCommand();
+	Command->PrepCommand(CurIndex, &(this->m_SectionArray), &EditedSection);
+	this->m_CommandManager->DoCommand(Command);
+
+	this->m_IsEdited = FALSE;
 }
