@@ -33,7 +33,7 @@ CMFCUndoRedoSampleDlg::CMFCUndoRedoSampleDlg(CWnd* pParent /*=nullptr*/)
 
 	this->m_CommandManager = new CMyCommandManager(10);
 
-	this->m_IsEdited = FALSE;
+	this->m_IsEdited_SectionName = FALSE;
 }
 
 CMFCUndoRedoSampleDlg::~CMFCUndoRedoSampleDlg()
@@ -49,6 +49,9 @@ CMFCUndoRedoSampleDlg::~CMFCUndoRedoSampleDlg()
 void CMFCUndoRedoSampleDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Text(pDX, IDC_EDIT_SECTION_NAME, this->m_SectionNameEditText);
+	DDX_Text(pDX, IDC_EDIT_SECTION_MANAGER_NAME, this->m_SectionManagerEditText);
+	DDX_Text(pDX, IDC_EDIT_SECTION_WORK, this->m_DescriptionEditText);
 }
 
 BEGIN_MESSAGE_MAP(CMFCUndoRedoSampleDlg, CDialogEx)
@@ -61,12 +64,12 @@ BEGIN_MESSAGE_MAP(CMFCUndoRedoSampleDlg, CDialogEx)
 	ON_LBN_SELCHANGE(IDC_LIST_SECTION_LIST, &CMFCUndoRedoSampleDlg::OnLbnSelchangeListSectionList)
 	ON_BN_CLICKED(IDC_BUTTON_UNDO, &CMFCUndoRedoSampleDlg::OnBnClickedButtonUndo)
 	ON_BN_CLICKED(IDC_BUTTON_REDO, &CMFCUndoRedoSampleDlg::OnBnClickedButtonRedo)
-	ON_EN_CHANGE(IDC_EDIT_SECTION_NAME, &CMFCUndoRedoSampleDlg::OnEnChangeEdit)
-	ON_EN_CHANGE(IDC_EDIT_SECTION_MANAGER_NAME, &CMFCUndoRedoSampleDlg::OnEnChangeEdit)
-	ON_EN_CHANGE(IDC_EDIT_SECTION_WORK, &CMFCUndoRedoSampleDlg::OnEnChangeEdit)
-	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_NAME, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit)
-	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_MANAGER_NAME, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit)
-	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_WORK, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit)
+	ON_EN_CHANGE(IDC_EDIT_SECTION_NAME, &CMFCUndoRedoSampleDlg::OnEnChangeEdit_SectionName)
+	ON_EN_CHANGE(IDC_EDIT_SECTION_MANAGER_NAME, &CMFCUndoRedoSampleDlg::OnEnChangeEdit_SectionManager)
+	ON_EN_CHANGE(IDC_EDIT_SECTION_WORK, &CMFCUndoRedoSampleDlg::OnEnChangeEdit_Description)
+	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_NAME, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit_SectionName)
+	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_MANAGER_NAME, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit_SectionManager)
+	ON_EN_KILLFOCUS(IDC_EDIT_SECTION_WORK, &CMFCUndoRedoSampleDlg::OnEnKillfocusEdit_Description)
 END_MESSAGE_MAP()
 
 
@@ -87,11 +90,11 @@ BOOL CMFCUndoRedoSampleDlg::OnInitDialog()
 	CEdit* SectionManagerEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_MANAGER_NAME);
 	CEdit* SectionWorkEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
 	CSectionOriginator* Instance = CSectionOriginator::GetInstance();
-	Instance->InitInstance(
+	Instance->InitInstance(this,
 		&this->m_SectionArray, 
-		SectionNameEdit, 
-		SectionManagerEdit, 
-		SectionWorkEdit);
+		&(this->m_SectionNameEditText),
+		&(this->m_SectionManagerEditText), 
+		&(this->m_DescriptionEditText));
 
 	return TRUE;  // フォーカスをコントロールに設定した場合を除き、TRUE を返します。
 }
@@ -145,7 +148,7 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonAdd()
 	
 	CSection* NewSection = new CSection();
 	this->CollectInputData(NewSection);
-	IMyCommand* Command = new CAddCommand();
+	CAddCommand* Command = new CAddCommand();
 	Command->PrepCommand(CurIndex, &this->m_SectionArray, NewSection);
 	this->CommandExecute(Command);
 }
@@ -161,7 +164,7 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonDelete()
 		CurIndex = 0;
 	}
 
-	IMyCommand* Command = new CDelCommand();
+	CDelCommand* Command = new CDelCommand();
 	Command->PrepCommand(CurIndex, &this->m_SectionArray);
 	this->CommandExecute(Command);
 
@@ -210,9 +213,9 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonUpdate()
 	
 	CSection* UpdateSection = new CSection();
 	this->CollectInputData(UpdateSection);
-	IMyCommand* Command = new CUpdateCommand();
-	Command->PrepCommand(CurIndex, &this->m_SectionArray, UpdateSection);
-	CommandExecute(Command);
+	//CUpdateCommand* Command = new CUpdateCommand();
+	//Command->PrepCommand(CurIndex, &this->m_SectionArray, UpdateSection);
+	//CommandExecute(Command);
 }
 
 /**
@@ -263,8 +266,6 @@ void CMFCUndoRedoSampleDlg::OnLbnSelchangeListSectionList()
 		SectionNameEdit->SetWindowTextA(CString(_T("")));
 		ManagerNameEdit->SetWindowTextA(CString(_T("")));
 		DescriptionEdit->SetWindowTextA(CString(_T("")));
-
-		return;
 	}
 	else {
 		CSection* SelSection = this->m_SectionArray.GetAt(CurIndex);
@@ -288,48 +289,57 @@ void CMFCUndoRedoSampleDlg::OnBnClickedButtonRedo()
 }
 
 /**
- *	セルの内容が編集されたことのイベントハンドラ
+ *	セクション名のセルの内容が編集されたことのイベントハンドラ
  */
-void CMFCUndoRedoSampleDlg::OnEnChangeEdit()
+void CMFCUndoRedoSampleDlg::OnEnChangeEdit_SectionName()
 {
-	this->m_IsEdited = TRUE;
+	this->m_IsEdited_SectionName = TRUE;
+}
+
+/**
+ *	管理者名のセルの内容が編集されたことのイベントハンドラ
+ */
+void CMFCUndoRedoSampleDlg::OnEnChangeEdit_SectionManager()
+{
+	this->m_IsEdited_SectionManager = TRUE;
+}
+
+/**
+ *	業務内容のセルの内容が編集されたことのイベントハンドラ
+ */
+void CMFCUndoRedoSampleDlg::OnEnChangeEdit_Description()
+{
+	this->m_IsEdited_Description = TRUE;
 }
 
 /**
  *	CEditセルからフォーカスが外れたことのイベントハンドラ
  */
-void CMFCUndoRedoSampleDlg::OnEnKillfocusEdit()
+void CMFCUndoRedoSampleDlg::OnEnKillfocusEdit_SectionName()
 {
-	//編集されていない場合には、何もしない。
-	if (FALSE == this->m_IsEdited) {
-		return;
+	this->OnEnKillfocusEdit(this->m_IsEdited_SectionName);
+}
+
+void CMFCUndoRedoSampleDlg::OnEnKillfocusEdit_SectionManager()
+{
+	this->OnEnKillfocusEdit(this->m_IsEdited_SectionManager);
+}
+
+void CMFCUndoRedoSampleDlg::OnEnKillfocusEdit_Description()
+{
+	this->OnEnKillfocusEdit(this->m_IsEdited_Description);
+}
+
+void CMFCUndoRedoSampleDlg::OnEnKillfocusEdit(BOOL& IsEdited)
+{
+	if (IsEdited) {
+		CEditSectionCommand* Command = new CEditSectionCommand();
+		Command->PrepCommand(this);
+		this->m_CommandManager->DoCommand(Command);
 	}
-
-	CEdit* SectionNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_NAME);
-	CEdit* ManagerNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_MANAGER_NAME);
-	CEdit* DescriptionEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
-
-	CString SectioName = _T("");
-	CString ManagerName = _T("");
-	CString Description = _T("");
-
-	SectionNameEdit->GetWindowTextA(SectioName);
-	ManagerNameEdit->GetWindowTextA(ManagerName);
-	DescriptionEdit->GetWindowTextA(Description);
-	CSection EditedSection(SectioName, ManagerName, Description);
-
-	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
-	INT_PTR CurIndex = ListBox->GetCurSel();
-	if ((-1) == CurIndex) {
-		CurIndex = 0;
+	else {
+		//対象が未編集の場合には、何もしない。
 	}
-	else if (this->m_SectionArray.GetCount() <= CurIndex) {
-		CurIndex = this->m_SectionArray.GetCount() - 1;
-	}
-	//選択されたセル：範囲内
-	CEditSectionCommand* Command = new CEditSectionCommand();
-	Command->PrepCommand(CurIndex, &(this->m_SectionArray), &EditedSection);
-	this->m_CommandManager->DoCommand(Command);
+	IsEdited = FALSE;
 
-	this->m_IsEdited = FALSE;
 }

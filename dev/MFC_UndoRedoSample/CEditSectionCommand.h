@@ -4,11 +4,15 @@ class CEditSectionCommand :
 	public IMyCommand
 {
 public:
-	virtual VOID PrepCommand(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr);
+	CEditSectionCommand();
+	virtual ~CEditSectionCommand() {}
+
+	virtual VOID PrepCommand(CDialog* EditedDialog);
 
 protected:
-	virtual VOID Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr);
+	virtual VOID ExecuteCommand();
 
 protected:
+	CDialog* m_EditedDialog;
 };
 

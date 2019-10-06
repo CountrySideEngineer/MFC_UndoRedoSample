@@ -1,22 +1,27 @@
 #include "pch.h"
 #include "CEditSectionCommand.h"
 
-VOID CEditSectionCommand::PrepCommand(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section)
+CEditSectionCommand::CEditSectionCommand()
+	: m_EditedDialog(nullptr)
+{}
+
+/**
+ *	コマンドの実行準備を行う。
+ *
+ *	@param[in]	EditedDialog	
+ */
+VOID CEditSectionCommand::PrepCommand(CDialog* EditedDialog)
 {
-	this->m_CmdParamIndex = Index;
-	this->m_CmdParamSectionArray = SectionArray;
-	this->m_CmdParamSection = Section;
+	ASSERT(nullptr != EditedDialog);
+
+	this->m_EditedDialog = EditedDialog;
 }
 /**
  *	データ編集コマンド
  */
-VOID CEditSectionCommand::Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section)
+VOID CEditSectionCommand::ExecuteCommand()
 {
-	ASSERT(NULL != SectionArray);
-	ASSERT(NULL != Section);
+	ASSERT(nullptr != this->m_EditedDialog);
 
-	CSection* DstSection = SectionArray->GetAt(Index);
-	DstSection->SetDescription(Section->GetDescription());
-	DstSection->SetManager(Section->GetManager());
-	DstSection->SetSectionName(Section->GetSectionName());
+	this->m_EditedDialog->UpdateData();	//入力された情報を、DDX変数に反映する。
 }

@@ -6,9 +6,15 @@ class CDelCommand :
 	public IMyCommand
 {
 public:
-	CDelCommand() {}
-	~CDelCommand() {}
+	CDelCommand();
+	virtual ~CDelCommand() {}
 
-	virtual VOID Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr);
+	virtual VOID PrepCommand(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr);
+	virtual VOID ExecuteCommand();
+
+protected:
+	INT_PTR m_CmdParamIndex;
+	CArray<CSection*>* m_CmdParamSectionArray;
+	CSection* m_CmdParamSection;
 };
 
