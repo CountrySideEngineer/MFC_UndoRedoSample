@@ -1,5 +1,6 @@
 #pragma once
 #include "CSection.h"
+#include "CMemento.h"
 
 /**
  *	コマンドクラスのインターフェース
@@ -7,13 +8,14 @@
 class IMyCommand
 {
 public:
-	virtual VOID PrepCommand(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr);
+	virtual ~IMyCommand();
+
 	virtual VOID Execute();
 	virtual VOID UnDo();
 	virtual VOID ReDo();
 
 protected:
-	virtual VOID Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr) = 0;
+	virtual VOID ExecuteCommand() = 0;
 	virtual VOID PreExecute();
 	virtual VOID PostExecute();
 
@@ -22,6 +24,6 @@ protected:
 	CArray<CSection*>* m_CmdParamSectionArray;
 	CSection* m_CmdParamSection;
 
-	CArray<CSection*> m_PreState;
-	CArray<CSection*> m_PostState;
+	CMemento* m_PreState;
+	CMemento* m_PostState;
 };

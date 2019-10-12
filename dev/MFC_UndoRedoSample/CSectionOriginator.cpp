@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "CSectionOriginator.h"
+#include "CMemento.h"
 
-CSectionOriginator* CSectionOriginator::Instance;
+CSectionOriginator* CSectionOriginator::Instance = NULL;
 
 /**
  *	CSectionOriginatorのインスタンスを取得する。
@@ -18,39 +19,64 @@ CSectionOriginator* CSectionOriginator::GetInstance()
  *	デフォルトコンストラクタ
  */
 CSectionOriginator::CSectionOriginator() 
-	: m_Target(nullptr)
+	: m_DestDialog(nullptr)
+	, m_Target(nullptr)
+	, m_SectionNameDdx(nullptr)
+	, m_SectionManagerDdx(nullptr)
+	, m_DescriptionDdx(nullptr)
 {}
 
 /**
  *	Mementoの反映先を設定する。
  */
-void CSectionOriginator::InitInstance(CArray<CSection*>* Target)
+void CSectionOriginator::InitInstance(CDialog* DestDialog, 
+	CArray<CSection*>* Target,
+	CString* SectionName,
+	CString* SectionManager,
+	CString* Description) 
 {
 	CSectionOriginator* Instance = GetInstance();
+	Instance->m_DestDialog = DestDialog;
 	Instance->m_Target = Target;
+	Instance->m_SectionNameDdx = SectionName;
+	Instance->m_SectionManagerDdx = SectionManager;
+	Instance->m_DescriptionDdx = Description;
 }
+
+/**
+ *	インスタンスを破棄する
+ */
+void CSectionOriginator::Destroy()
+{
+	if (nullptr != Instance) {
+		delete Instance;
+	}
+}
+
 
 /**
  *	Mementoを作成する。
  *
- *	@param	Mement	状態の反映先
+ *	@return	現在の状態を保持したメメント
  */
-void CSectionOriginator::CreateMement(CArray<CSection*>* Mement)
+CMemento* CSectionOriginator::CreateMemento()
 {
-	ASSERT(nullptr != Mement);
-
-	for (INT_PTR Index = 0; Index < Mement->GetCount(); Index++) {
-		CSection* MementItem = Mement->GetAt(Index);
-		delete MementItem;
-		MementItem = nullptr;
+	CArray<CSection*>* Target = new CArray<CSection*>();
+	if (NULL != this->m_Target) {
+		for (INT_PTR Index = 0; Index < this->m_Target->GetCount(); Index++) {
+			CSection* SectionItem = this->m_Target->GetAt(Index);
+			CSection* SectionMemento = new CSection(SectionItem);
+			Target->Add(SectionMemento);
+		}
 	}
-	Mement->RemoveAll();
 
-	for (INT_PTR MementoIndex = 0; MementoIndex < this->m_Target->GetCount(); MementoIndex++) {
-		CSection* StateItem = this->m_Target->GetAt(MementoIndex);
-		CSection* NewItem = new CSection(StateItem);
-		Mement->Add(NewItem);
-	}
+	CMemento* Memento = new CMemento();
+	Memento->SetTarget(Target);
+	Memento->SetSectionName(*(this->m_SectionNameDdx));
+	Memento->SetSectionManager(*(this->m_SectionManagerDdx));
+	Memento->SetDescription(*(this->m_DescriptionDdx));
+
+	return Memento;
 }
 
 /**
@@ -75,4 +101,36 @@ void CSectionOriginator::SetMement(CArray<CSection*>* Mement)
 		CSection* NewItem = new CSection(StateItem);
 		this->m_Target->Add(NewItem);
 	}
+}
+
+/**
+ *	状態を元に戻す
+ *
+ *	@param[in]	Memento	元に戻したい状態を保持したCMementoオブジェクト
+ *						へのポインタ。
+ */
+void CSectionOriginator::SetMemento(CMemento* Memento)
+{
+	ASSERT(nullptr != Memento);
+
+	for (INT_PTR Index = 0; Index < this->m_Target->GetCount(); Index++) {
+		CSection* TargetItem = this->m_Target->GetAt(Index);
+		delete TargetItem;
+		TargetItem = nullptr;
+	}
+	this->m_Target->RemoveAll();
+
+	CArray<CSection*>* MementoTarget = Memento->GetTarget();
+	if (nullptr != MementoTarget) {
+		for (INT_PTR Index = 0; Index < MementoTarget->GetCount(); Index++) {
+			CSection* SectionItem = MementoTarget->GetAt(Index);
+			this->m_Target->InsertAt(Index, SectionItem);
+		}
+	}
+
+	*(this->m_SectionNameDdx) = Memento->GetSectionName();
+	*(this->m_SectionManagerDdx) = Memento->GetSectionManager();
+	*(this->m_DescriptionDdx) = Memento->GetDescription();
+
+	this->m_DestDialog->UpdateData(FALSE);	//DDX変数の内容をコントロールに反映する。
 }

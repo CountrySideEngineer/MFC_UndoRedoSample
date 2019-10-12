@@ -58,7 +58,7 @@ VOID CMyCommandManager::UnDo()
 VOID CMyCommandManager::ReDo()
 {
 	if (0 < this->m_ReDoStack.GetCount()) {
-		IMyCommand* Command = this->m_ReDoStack.GetTail();
+		IMyCommand* Command = this->m_ReDoStack.RemoveTail();
 		Command->ReDo();
 		this->m_UnDoStack.AddTail(Command);
 	}
@@ -95,13 +95,13 @@ VOID CMyCommandManager::ClearReDoStack()
 /**
  *	指定されたスタック(CList)をクリアする。
  */
-VOID CMyCommandManager::ClearStack(CList<IMyCommand*>& m_UnDoStack)
+VOID CMyCommandManager::ClearStack(CList<IMyCommand*>& ReDoUnDoStack)
 {
-	POSITION StackPosition = m_UnDoStack.GetHeadPosition();
-	for (INT_PTR nIndex = 0; nIndex < m_UnDoStack.GetCount(); nIndex++) {
-		IMyCommand* Command = m_UnDoStack.GetAt(StackPosition);
+	POSITION StackPosition = ReDoUnDoStack.GetHeadPosition();
+	for (INT_PTR nIndex = 0; nIndex < ReDoUnDoStack.GetCount(); nIndex++) {
+		IMyCommand* Command = ReDoUnDoStack.GetNext(StackPosition);
 		delete Command;
 		Command = NULL;
 	}
-	m_UnDoStack.RemoveAll();
+	ReDoUnDoStack.RemoveAll();
 }
