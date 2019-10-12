@@ -9,9 +9,10 @@ class CAddCommand :
 	public IMyCommand
 {
 public:
-	CAddCommand() {}
+	CAddCommand();
 	virtual ~CAddCommand() {}
 	
-	virtual VOID Execute(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr);
+	virtual VOID PrepCommand(INT_PTR Index, CArray<CSection*>* SectionArray, CSection* Section = nullptr);
+	virtual VOID ExecuteCommand();
 };
 
