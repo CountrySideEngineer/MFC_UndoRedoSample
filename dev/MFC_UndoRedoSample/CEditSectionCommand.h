@@ -15,4 +15,3 @@ protected:
 protected:
 	CDialog* m_EditedDialog;
 };
-

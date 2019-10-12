@@ -5,10 +5,11 @@
  *	デフォルトコンストラクタ
  */
 CDelCommand::CDelCommand()
-	: m_CmdParamIndex(0)
-	, m_CmdParamSectionArray(nullptr)
-	, m_CmdParamSection(nullptr)
-{}
+{
+	m_CmdParamIndex = 0;
+	m_CmdParamSectionArray = nullptr;
+	m_CmdParamSection = nullptr;
+}
 
 /**
  *	コマンドを実行するために必要なデータを設定する。

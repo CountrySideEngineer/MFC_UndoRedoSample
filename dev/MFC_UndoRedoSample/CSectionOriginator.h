@@ -11,6 +11,7 @@ public:
 		CString* SectionManager,
 		CString* Description);
 	static CSectionOriginator* GetInstance();
+	static void Destroy();
 
 	virtual CMemento* CreateMemento();
 	virtual void SetMement(CArray<CSection*>* Mement);
@@ -18,6 +19,7 @@ public:
 
 protected:
 	CSectionOriginator();
+	virtual ~CSectionOriginator() {}
 
 protected:
 	CDialog* m_DestDialog;

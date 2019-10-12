@@ -2,7 +2,7 @@
 #include "CSectionOriginator.h"
 #include "CMemento.h"
 
-CSectionOriginator* CSectionOriginator::Instance;
+CSectionOriginator* CSectionOriginator::Instance = NULL;
 
 /**
  *	CSectionOriginatorのインスタンスを取得する。
@@ -42,6 +42,17 @@ void CSectionOriginator::InitInstance(CDialog* DestDialog,
 	Instance->m_SectionManagerDdx = SectionManager;
 	Instance->m_DescriptionDdx = Description;
 }
+
+/**
+ *	インスタンスを破棄する
+ */
+void CSectionOriginator::Destroy()
+{
+	if (nullptr != Instance) {
+		delete Instance;
+	}
+}
+
 
 /**
  *	Mementoを作成する。

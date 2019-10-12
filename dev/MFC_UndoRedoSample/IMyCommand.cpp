@@ -2,8 +2,18 @@
 #include "IMyCommand.h"
 #include "CSectionOriginator.h"
 
-//	@brief	コマンドの実行
-//			すでにコマンドが実行されていた場合には、状態を実行後に変更する。
+/**
+ *	デストラクタ
+ */
+IMyCommand::~IMyCommand()
+{
+	delete this->m_PreState;
+	delete this->m_PostState;
+}
+
+/**
+ *	コマンド処理を実行しつつ、実行前後の状態を保持する。
+ */
 VOID IMyCommand::Execute()
 {
 	this->PreExecute();

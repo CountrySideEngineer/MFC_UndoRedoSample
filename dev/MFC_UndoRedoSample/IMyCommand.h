@@ -8,6 +8,8 @@
 class IMyCommand
 {
 public:
+	virtual ~IMyCommand();
+
 	virtual VOID Execute();
 	virtual VOID UnDo();
 	virtual VOID ReDo();

@@ -35,6 +35,9 @@ protected:
 	CString m_SectionNameEditText;
 	CString m_SectionManagerEditText;
 	CString m_DescriptionEditText;
+	int m_CurSelListBoxIndex;
+
+	CListBox m_SectionNameListBox;
 
 	BOOL m_IsEdited_SectionName;
 	BOOL m_IsEdited_SectionManager;

@@ -34,6 +34,10 @@ CMFCUndoRedoSampleDlg::CMFCUndoRedoSampleDlg(CWnd* pParent /*=nullptr*/)
 	this->m_CommandManager = new CMyCommandManager(10);
 
 	this->m_IsEdited_SectionName = FALSE;
+	this->m_IsEdited_SectionManager = FALSE;
+	this->m_IsEdited_Description = FALSE;
+
+	this->m_CurSelListBoxIndex = 0;
 }
 
 CMFCUndoRedoSampleDlg::~CMFCUndoRedoSampleDlg()
@@ -43,7 +47,11 @@ CMFCUndoRedoSampleDlg::~CMFCUndoRedoSampleDlg()
 		delete SectionItem;
 		SectionItem = NULL;
 	}
+	this->m_SectionArray.RemoveAll();
+
 	delete this->m_CommandManager;
+
+	CSectionOriginator::Destroy();
 }
 
 void CMFCUndoRedoSampleDlg::DoDataExchange(CDataExchange* pDX)
@@ -52,6 +60,7 @@ void CMFCUndoRedoSampleDlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Text(pDX, IDC_EDIT_SECTION_NAME, this->m_SectionNameEditText);
 	DDX_Text(pDX, IDC_EDIT_SECTION_MANAGER_NAME, this->m_SectionManagerEditText);
 	DDX_Text(pDX, IDC_EDIT_SECTION_WORK, this->m_DescriptionEditText);
+	DDX_Control(pDX, IDC_LIST_SECTION_LIST, m_SectionNameListBox);
 }
 
 BEGIN_MESSAGE_MAP(CMFCUndoRedoSampleDlg, CDialogEx)
@@ -91,7 +100,7 @@ BOOL CMFCUndoRedoSampleDlg::OnInitDialog()
 	CEdit* SectionWorkEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
 	CSectionOriginator* Instance = CSectionOriginator::GetInstance();
 	Instance->InitInstance(this,
-		&this->m_SectionArray, 
+		&(this->m_SectionArray), 
 		&(this->m_SectionNameEditText),
 		&(this->m_SectionManagerEditText), 
 		&(this->m_DescriptionEditText));
@@ -140,12 +149,14 @@ HCURSOR CMFCUndoRedoSampleDlg::OnQueryDragIcon()
  */
 void CMFCUndoRedoSampleDlg::OnBnClickedButtonAdd()
 {
-	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
-	INT_PTR CurIndex = ListBox->GetCurSel();
+	INT_PTR CurIndex = this->m_SectionNameListBox.GetCurSel();
 	if (CurIndex < 0) {
 		CurIndex = 0;
 	}
 	
+	this->UpdateData();	//コントロールの内容を、DDX変数に反映
+
+	//入力済みデータを集めて、確保した領域に反映する。
 	CSection* NewSection = new CSection();
 	this->CollectInputData(NewSection);
 	CAddCommand* Command = new CAddCommand();
@@ -205,17 +216,19 @@ LRESULT CMFCUndoRedoSampleDlg::OnChangeSectionData(WPARAM wParam, LPARAM lParam)
  */
 void CMFCUndoRedoSampleDlg::OnBnClickedButtonUpdate()
 {
+	this->UpdateData();	//入力データを、DDX変数に反映。
+
 	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
-	INT_PTR CurIndex = ListBox->GetCurSel();
+	INT_PTR CurIndex = this->m_SectionNameListBox.GetCurSel();
 	if (CurIndex < 0) {
 		CurIndex = 0;
 	}
-	
+
 	CSection* UpdateSection = new CSection();
 	this->CollectInputData(UpdateSection);
-	//CUpdateCommand* Command = new CUpdateCommand();
-	//Command->PrepCommand(CurIndex, &this->m_SectionArray, UpdateSection);
-	//CommandExecute(Command);
+	CUpdateCommand* Command = new CUpdateCommand();
+	Command->PrepCommand(CurIndex, &(this->m_SectionArray), UpdateSection);
+	this->CommandExecute(Command);
 }
 
 /**
@@ -231,49 +244,49 @@ void CMFCUndoRedoSampleDlg::CommandExecute(IMyCommand* Command)
 	SendMessage(IDM_UPDATE_LIST, (WPARAM)(&this->m_SectionArray));
 }
 
+/**
+ *	入力されたデータ(DDX反映済み)を集めて、引数で指定された領域にセットする。
+ *
+ *	@param[out]	DstSection	データの反映先へのポインタ
+ */
 void CMFCUndoRedoSampleDlg::CollectInputData(CSection* DstSection)
 {
 	ASSERT(nullptr != DstSection);
 
-	CEdit* SectionNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_NAME);
-	CEdit* ManagerNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_MANAGER_NAME);
-	CEdit* DescriptionEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
-
-	CString SectionName;
-	SectionNameEdit->GetWindowTextA(SectionName);
-	CString ManagerName;
-	ManagerNameEdit->GetWindowTextA(ManagerName);
-	CString Description;
-	DescriptionEdit->GetWindowTextA(Description);
-
-	if (SectionName != CString(_T(""))) {
-		DstSection->SetSectionName(SectionName);
-	}
-	DstSection->SetManager(ManagerName);
-	DstSection->SetDescription(Description);
+	DstSection->SetSectionName(this->m_SectionNameEditText);
+	DstSection->SetManager(this->m_SectionManagerEditText);
+	DstSection->SetDescription(this->m_DescriptionEditText);
 }
 
+/**
+ *	部署名一覧リストのビュー(CListBox)において、選択されたアイテムが変更された場合の
+ *	コールバック関数。
+ */
 void CMFCUndoRedoSampleDlg::OnLbnSelchangeListSectionList()
 {
-	CListBox* ListBox = (CListBox*)GetDlgItem(IDC_LIST_SECTION_LIST);
-	CEdit* SectionNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_NAME);
-	CEdit* ManagerNameEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_MANAGER_NAME);
-	CEdit* DescriptionEdit = (CEdit*)GetDlgItem(IDC_EDIT_SECTION_WORK);
+	this->UpdateData();	//リストコントロールの内容を、メンバ変数に反映
 
-	INT_PTR CurIndex = ListBox->GetCurSel();
-	if ((0 == this->m_SectionArray.GetCount()) || (CurIndex < 0)) {
-		//リストの内容が空 → 表示内容をクリアする。
-		SectionNameEdit->SetWindowTextA(CString(_T("")));
-		ManagerNameEdit->SetWindowTextA(CString(_T("")));
-		DescriptionEdit->SetWindowTextA(CString(_T("")));
+	this->m_CurSelListBoxIndex = this->m_SectionNameListBox.GetCurSel();	//ここから編集！
+	if (this->m_CurSelListBoxIndex < 0) {
+		this->m_CurSelListBoxIndex = 0;
+	}
+
+	if ((0 == this->m_SectionArray.GetCount()) || 
+		(this->m_CurSelListBoxIndex < 0))
+	{
+		//リストの内容が空、あるいは不正なアイテムが選択された
+		this->m_SectionNameEditText = _T("");
+		this->m_SectionManagerEditText = _T("");
+		this->m_DescriptionEditText = _T("");
 	}
 	else {
-		CSection* SelSection = this->m_SectionArray.GetAt(CurIndex);
+		CSection* CurSelection = this->m_SectionArray.GetAt(this->m_CurSelListBoxIndex);
 
-		SectionNameEdit->SetWindowTextA(SelSection->GetSectionName());
-		ManagerNameEdit->SetWindowTextA(SelSection->GetManager());
-		DescriptionEdit->SetWindowTextA(SelSection->GetDescription());
+		this->m_SectionNameEditText = CurSelection->GetSectionName();
+		this->m_SectionManagerEditText = CurSelection->GetManager();
+		this->m_DescriptionEditText = CurSelection->GetDescription();
 	}
+	this->UpdateData(FALSE);
 }
 
 void CMFCUndoRedoSampleDlg::OnBnClickedButtonUndo()
@@ -335,11 +348,11 @@ void CMFCUndoRedoSampleDlg::OnEnKillfocusEdit(BOOL& IsEdited)
 	if (IsEdited) {
 		CEditSectionCommand* Command = new CEditSectionCommand();
 		Command->PrepCommand(this);
-		this->m_CommandManager->DoCommand(Command);
+		this->CommandExecute(Command);
 	}
 	else {
 		//対象が未編集の場合には、何もしない。
 	}
-	IsEdited = FALSE;
+	IsEdited = FALSE;	//状態を「編集完了」/「未編集」にする。
 
 }

@@ -99,7 +99,7 @@ VOID CMyCommandManager::ClearStack(CList<IMyCommand*>& ReDoUnDoStack)
 {
 	POSITION StackPosition = ReDoUnDoStack.GetHeadPosition();
 	for (INT_PTR nIndex = 0; nIndex < ReDoUnDoStack.GetCount(); nIndex++) {
-		IMyCommand* Command = ReDoUnDoStack.GetAt(StackPosition);
+		IMyCommand* Command = ReDoUnDoStack.GetNext(StackPosition);
 		delete Command;
 		Command = NULL;
 	}

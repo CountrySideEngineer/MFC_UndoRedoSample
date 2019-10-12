@@ -17,5 +17,6 @@ CMemento::~CMemento()
 			TargetItem = NULL;
 		}
 		this->m_Target->RemoveAll();
+		delete this->m_Target;
 	}
 }
